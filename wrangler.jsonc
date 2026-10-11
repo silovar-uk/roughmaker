@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "roughmaker-prod",
+  "main": "./worker/index.js",
+  "compatibility_date": "2026-10-11",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  },
+  "d1_databases": [
+    {"binding":"DB", "database_name":"roughmaker-prod", "database_id":"SET_D1_DATABASE_ID_BEFORE_DEPLOY"}
+  ]
+}
