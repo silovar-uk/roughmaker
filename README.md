@@ -26,7 +26,7 @@ npm test
 
 ## GitHubから本番を更新する手順
 
-1. GitHubで新規 **private repository** `roughmaker` を作成する（本アプリはソース公開も不要）。このフォルダの中身を`main`にpushする。`git init -b main && git add . && git commit -m "Initial Roughmaker implementation" && git remote add origin https://github.com/USERNAME/roughmaker.git && git push -u origin main`。
+1. [silovar-uk/roughmaker](https://github.com/silovar-uk/roughmaker) の`main`に実装済み。**2026-10-11時点ではPublic**のため、ソースコードも非公開にしたい場合はGitHubの`Settings → General → Danger Zone → Change repository visibility`からPrivateへ変更する。GitHub上の公開設定とWeb画面のアクセス制御は別物。
 2. CloudflareでD1 database `roughmaker-prod` を作成する（`npx wrangler d1 create roughmaker-prod`）。データベースのIDを控える。
 3. Cloudflare Zero Trustで **Worker `roughmaker-prod` の本番URL、workers.dev、各プレビューURL、カスタムドメインをすべてAccess Applicationで保護**。Policyは本人のメールアドレス完全一致の`Allow`のみ。ドメイン許可やEveryoneは使わない。One-time PINはログイン方式としてのみ使用し、許可ルールにしない。
 4. `CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_D1_DATABASE_ID` をGitHubリポジトリの **Settings → Secrets and variables → Actions → Repository secrets** に設定する。
@@ -35,7 +35,7 @@ npm test
 7. 最後にGitHub Secretsで`DEPLOY_APPROVED=true`を設定し、Actionsの`Deploy private Roughmaker Worker`を手動で再実行する。以後は`main`にpushすると自動デプロイ。
 8. ログアウト状態・許可外メール・API直接アクセス・静的JS/CSS・プレビューURL・workers.devURLへの未認証リクエストが全てブロックされることを検証する。
 
-**注意**：接続前のGitHub Actionsは意図的に失敗する。このガードを外して公開することは禁止。GitHubのprivate repositoryはソースへのアクセスを制御するものだが、Webサイトの保護はCloudflare Access＋Worker JWT検証が担当する。
+**注意**：`DEPLOY_APPROVED=true`が未設定ならGitHub Actionsのデプロイ部分は**正常にスキップ**する（CIテストは実行）。Access確認前に承認フラグを有効化しないこと。GitHubのprivate repositoryはソースへのアクセスを制御するものだが、Webサイトの保護はCloudflare Access＋Worker JWT検証が担当する。
 
 > Cloudflareのデプロイ作業にはユーザー本人のCloudflareアカウント設定が必要。トークン・メールアドレス・AUDはコードへ絶対にコミットしないこと。
 
