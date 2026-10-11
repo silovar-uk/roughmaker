@@ -21,15 +21,26 @@ jobs:
       - run: npm run check
       - run: npm test
       - name: Security deployment gate
+        id: gate
         run: |
-          test "$DEPLOY_APPROVED" = 'true' || (echo 'Deploy is blocked until Access policy is verified and DEPLOY_APPROVED=true.' && exit 1)
+          if [ "$DEPLOY_APPROVED" != 'true' ]; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo '::notice::Deploy skipped: Cloudflare Access is not approved yet. Set DEPLOY_APPROVED=true only after completing the private-access checklist.'
+            exit 0
+          fi
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_D1_DATABASE_ID"
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
       - name: Set Cloudflare D1 binding
+        if: steps.gate.outputs.ready == 'true'
         run: node scripts/prepare-deploy.mjs
       - name: Install Wrangler
+        if: steps.gate.outputs.ready == 'true'
         run: npm install --no-save wrangler@4
       - name: Apply database migration
+        if: steps.gate.outputs.ready == 'true'
         run: npx wrangler d1 migrations apply roughmaker-prod --remote
       - name: Deploy Worker + protected assets
+        if: steps.gate.outputs.ready == 'true'
         run: npx wrangler deploy
