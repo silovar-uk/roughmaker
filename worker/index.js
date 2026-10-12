@@ -15,7 +15,7 @@ export async function verifyAccess(request,env){
  const now=Math.floor(Date.now()/1000);if(head.alg!=='RS256'||!head.kid||body.iss!==issuer.replace(/\/$/,'')||!Array.isArray(body.aud)||!body.aud.includes(aud)||typeof body.exp!=='number'||body.exp<=now||typeof body.iat!=='number'||body.iat>now+120)throw Object.assign(new Error('認証トークンが有効ではありません'),{status:401});
  if(typeof body.email!=='string'||body.email.trim().toLowerCase()!==owner.trim().toLowerCase())throw Object.assign(new Error('このユーザーにはアクセス権がありません'),{status:403});
  if(cachedKeys.issuer!==issuer||cachedKeys.until<Date.now()){
-  const u=new URL('/cdn-cgi/access/certs',issuer);const r=await fetch(u.toString(),{redirect:'error'});if(!r.ok)throw Object.assign(new Error('署名検証用証明書を取得できません'),{status:503});const result=await r.json();cachedKeys={issuer,until:Date.now()+5*60_000,keys:result.keys||[]};
+  const u=new URL('/cdn-cgi/access/certs',issuer);const r=await fetch(u.toString(),{redirect:'manual'});if(!r.ok)throw Object.assign(new Error('署名検証用証明書を取得できません'),{status:503});const result=await r.json();cachedKeys={issuer,until:Date.now()+5*60_000,keys:result.keys||[]};
  }
  const jwk=cachedKeys.keys.find(k=>k.kid===head.kid&&k.kty==='RSA');if(!jwk)throw Object.assign(new Error('有効な署名鍵が見つかりません'),{status:401});
  try{const key=await crypto.subtle.importKey('jwk',jwk,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);const valid=await crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,b64(parts[2]),new TextEncoder().encode(parts[0]+'.'+parts[1]));if(!valid)throw Error();}catch{throw Object.assign(new Error('認証トークンの署名が不正です'),{status:401});}
